@@ -9,8 +9,13 @@ description = "Backend API for the battle school lunch application"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+  "agent-framework-ag-ui>=1.1.0,<2.0.0",
+  "agent-framework-devui==1.0.0b260813",
+  "agent-framework-github-copilot>=1.0.2,<2.0.0",
+  "agent-framework-orchestrations>=1.1.0,<2.0.0",
   "fastapi>=0.115.0,<1.0.0",
   "httpx>=0.28.0,<1.0.0",
+  "mcp>=1.28.0,<2.0.0",
   "pydantic>=2.9.0,<3.0.0",
   "uvicorn[standard]>=0.34.0,<1.0.0",
 ]

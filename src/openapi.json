@@ -75,6 +75,33 @@
         }
       }
     },
+    "/api/schools/random": {
+      "get": {
+        "operationId": "getRandomSchools",
+        "summary": "무작위 학교 후보 조회",
+        "responses": {
+          "200": {
+            "description": "서로 다른 학교 후보 10개",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RandomSchoolResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "$ref": "#/components/responses/Error502"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          },
+          "504": {
+            "$ref": "#/components/responses/Error504"
+          }
+        }
+      }
+    },
     "/api/schools/{educationOfficeCode}/{schoolCode}/meals": {
       "get": {
         "operationId": "getLunchMeals",
@@ -338,6 +365,23 @@
           }
         }
       },
+      "RandomSchoolResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schools"
+        ],
+        "properties": {
+          "schools": {
+            "type": "array",
+            "minItems": 10,
+            "maxItems": 10,
+            "items": {
+              "$ref": "#/components/schemas/SchoolSummary"
+            }
+          }
+        }
+      },
       "Meal": {
         "type": "object",
         "additionalProperties": false,
@@ -372,6 +416,9 @@
             }
           },
           "origin": {
+            "type": "string"
+          },
+          "mealCount": {
             "type": "string"
           }
         }

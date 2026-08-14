@@ -3,6 +3,54 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 
+vi.mock('@ag-ui/client', () => ({
+  HttpAgent: class {
+    async runAgent() {
+      return {
+        result: null,
+        newMessages: [
+          {
+            id: 'analysis-result',
+            role: 'assistant',
+            content: JSON.stringify({
+              scores: [
+                {
+                  school: { educationOfficeCode: 'B10', schoolCode: '7010001', name: '후보학교1' },
+                  totalScore: 84,
+                  areas: [
+                    { area: 'nutrition_balance', rating: 5, weight: 45, weightedScore: 45, rationale: '균형 우수', evidence: ['열량 확인'], estimatedFlags: [] },
+                    { area: 'healthiness', rating: 4, weight: 30, weightedScore: 24, rationale: '건강성 우수', evidence: ['영양정보 확인'], estimatedFlags: [] },
+                    { area: 'ingredient_menu_quality', rating: 3, weight: 25, weightedScore: 15, rationale: '보통', evidence: ['메뉴 확인'], estimatedFlags: [] },
+                  ],
+                },
+                {
+                  school: { educationOfficeCode: 'C10', schoolCode: '7010002', name: '후보학교2' },
+                  totalScore: 79,
+                  areas: [
+                    { area: 'nutrition_balance', rating: 4, weight: 45, weightedScore: 36, rationale: '균형 양호', evidence: ['열량 확인'], estimatedFlags: [] },
+                    { area: 'healthiness', rating: 3, weight: 30, weightedScore: 18, rationale: '평균', evidence: ['영양정보 확인'], estimatedFlags: [] },
+                    { area: 'ingredient_menu_quality', rating: 5, weight: 25, weightedScore: 25, rationale: '구성 우수', evidence: ['메뉴 확인'], estimatedFlags: [] },
+                  ],
+                },
+              ],
+              outcome: 'first',
+              winnerSchool: { educationOfficeCode: 'B10', schoolCode: '7010001', name: '후보학교1' },
+              review: {
+                summary: '첫 번째 학교가 근소하게 우수합니다.',
+                keyReason: '영양 균형 점수가 높습니다.',
+                firstSchoolImprovement: '채소 반찬을 보강하세요.',
+                secondSchoolImprovement: '나트륨을 줄이세요.',
+                qualityWarnings: [],
+              },
+              disclaimer: '이 분석은 영양사의 전문 진단을 대체하지 않습니다.',
+            }),
+          },
+        ],
+      };
+    }
+  },
+}));
+
 type DeferredResponse = {
   promise: Promise<Response>;
   resolve: (response: Response) => void;
@@ -363,5 +411,50 @@ describe('App', () => {
     );
 
     expect(await screen.findByRole('button', { name: /빠른학교/ })).toBeInTheDocument();
+  });
+
+  it('selects exactly two random schools, creates an editable prompt, and renders analysis results', async () => {
+    const schools = Array.from({ length: 10 }, (_, index) => ({
+      educationOfficeCode: index === 0 ? 'B10' : 'C10',
+      schoolCode: `701000${index + 1}`,
+      name: `후보학교${index + 1}`,
+      region: '서울',
+      address: `서울특별시 예시로 ${index + 1}`,
+    }));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: string | URL | Request) => {
+        const url = toUrl(input);
+        if (url.pathname === '/api/schools/random') {
+          return jsonResponse({ schools });
+        }
+        throw new Error(`Unhandled request: ${url.toString()}`);
+      }),
+    );
+
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '급식 정보 분석' }));
+
+    const candidateList = await screen.findByRole('list', { name: '무작위 학교 후보' });
+    const candidates = within(candidateList).getAllByRole('button');
+    expect(candidates).toHaveLength(10);
+    await user.click(candidates[0]);
+    await user.click(candidates[1]);
+    expect(candidates[2]).toBeDisabled();
+
+    const dateInput = screen.getByLabelText('분석 날짜', { selector: 'input' });
+    await user.type(dateInput, dateInput.getAttribute('max') ?? '');
+    expect(await screen.findByDisplayValue(/후보학교1와 후보학교2/)).toBeInTheDocument();
+
+    const promptInput = screen.getByLabelText('분석 프롬프트');
+    await user.clear(promptInput);
+    await user.type(promptInput, '수정한 분석 요청');
+    await user.click(screen.getByRole('button', { name: '멀티에이전트 분석 시작' }));
+
+    expect(await screen.findByRole('heading', { name: /후보학교1 승리/ })).toBeInTheDocument();
+    expect(screen.getByText('84.0점', { exact: false })).toBeInTheDocument();
+    expect(screen.getByText('79.0점', { exact: false })).toBeInTheDocument();
+    expect(screen.getByText(/영양사의 전문 진단을 대체하지 않습니다/)).toBeInTheDocument();
   });
 });

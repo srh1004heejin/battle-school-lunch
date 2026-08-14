@@ -16,6 +16,8 @@ class Settings(BaseModel):
     neis_page_size: int = Field(default=1000, ge=1, le=1000)
     max_date_range_days: int = Field(default=31, ge=1, le=366)
     retry_attempts: int = Field(default=1, ge=0, le=3)
+    agent_mcp_url: str = "http://127.0.0.1:8001/mcp"
+    github_copilot_model: str | None = None
 
     @field_validator("neis_api_key")
     @classmethod
@@ -40,6 +42,22 @@ class Settings(BaseModel):
         normalized = value.strip().rstrip("/")
         return normalized or None
 
+    @field_validator("agent_mcp_url")
+    @classmethod
+    def normalize_agent_mcp_url(cls, value: str) -> str:
+        normalized = value.strip().rstrip("/")
+        if not normalized:
+            raise ValueError("AGENT_MCP_URL must not be empty.")
+        return normalized
+
+    @field_validator("github_copilot_model")
+    @classmethod
+    def normalize_optional_model(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip()
+        return normalized or None
+
     @classmethod
     def from_env(cls, environ: Mapping[str, str] | None = None) -> "Settings":
         env = environ if environ is not None else os.environ
@@ -60,6 +78,8 @@ class Settings(BaseModel):
             "neis_page_size": env.get("NEIS_PAGE_SIZE", "1000"),
             "max_date_range_days": env.get("MAX_DATE_RANGE_DAYS", "31"),
             "retry_attempts": env.get("RETRY_ATTEMPTS", "1"),
+            "agent_mcp_url": env.get("AGENT_MCP_URL", "http://127.0.0.1:8001/mcp"),
+            "github_copilot_model": env.get("GITHUB_COPILOT_MODEL"),
         }
 
         try:
