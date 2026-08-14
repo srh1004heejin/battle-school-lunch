@@ -1,0 +1,30 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    environment:
+      NEIS_API_KEY: ${NEIS_API_KEY:?Set NEIS_API_KEY in .env}
+      NEIS_BASE_URL: ${NEIS_BASE_URL:-https://open.neis.go.kr/hub}
+      NEIS_TIMEOUT_SECONDS: ${NEIS_TIMEOUT_SECONDS:-10}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  frontend:
+    build:
+      context: ./frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "5173:80"

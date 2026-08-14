@@ -1,0 +1,119 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "NEIS 교육정보 개방 포털 API",
+    "version": "1.0.0",
+    "description": "급식한눈에서 사용하는 학교기본정보 및 급식식단정보 외부 계약"
+  },
+  "servers": [{ "url": "https://open.neis.go.kr/hub" }],
+  "paths": {
+    "/schoolInfo": {
+      "get": {
+        "operationId": "searchNeisSchools",
+        "parameters": [
+          { "$ref": "#/components/parameters/ApiKey" },
+          { "$ref": "#/components/parameters/ResponseType" },
+          {
+            "name": "SCHUL_NM",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "ATPT_OFCDC_SC_CODE",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "SD_SCHUL_CODE",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          { "$ref": "#/components/parameters/Page" },
+          { "$ref": "#/components/parameters/PageSize" }
+        ],
+        "responses": {
+          "200": {
+            "description": "학교 정보 또는 NEIS 오류 본문",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        }
+      }
+    },
+    "/mealServiceDietInfo": {
+      "get": {
+        "operationId": "getNeisMeals",
+        "parameters": [
+          { "$ref": "#/components/parameters/ApiKey" },
+          { "$ref": "#/components/parameters/ResponseType" },
+          {
+            "name": "ATPT_OFCDC_SC_CODE",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "SD_SCHUL_CODE",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "MMEAL_SC_CODE",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "enum": ["2"] }
+          },
+          {
+            "name": "MLSV_FROM_YMD",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "pattern": "^[0-9]{8}$" }
+          },
+          {
+            "name": "MLSV_TO_YMD",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "pattern": "^[0-9]{8}$" }
+          },
+          { "$ref": "#/components/parameters/Page" },
+          { "$ref": "#/components/parameters/PageSize" }
+        ],
+        "responses": {
+          "200": {
+            "description": "급식 정보 또는 NEIS 오류 본문",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "ApiKey": {
+        "name": "KEY",
+        "in": "query",
+        "required": true,
+        "schema": { "type": "string" }
+      },
+      "ResponseType": {
+        "name": "Type",
+        "in": "query",
+        "required": true,
+        "schema": { "type": "string", "enum": ["json"] }
+      },
+      "Page": {
+        "name": "pIndex",
+        "in": "query",
+        "schema": { "type": "integer", "minimum": 1, "default": 1 }
+      },
+      "PageSize": {
+        "name": "pSize",
+        "in": "query",
+        "schema": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 100 }
+      }
+    }
+  }
+}

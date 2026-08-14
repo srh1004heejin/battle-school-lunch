@@ -30,6 +30,37 @@ NEIS 공개 API를 활용해 초중고 급식 메뉴를 조회하고 AI 에이�
 > [!NOTE]
 > 완성된 애플리케이션을 직접 실행하거나 구현 결과를 비교하려면 [데모 앱 리포지토리](https://github.com/devkimchi/battle-school-lunch)를 참고하세요.
 
+## 앱 실행
+
+학교 이름과 날짜 범위로 NEIS 중식 정보를 조회하는 React/FastAPI 앱이
+포함되어 있습니다. Glassmorphism 기반의 반응형 UI에서 검색, 학교 선택,
+날짜 검증, 결과·빈 상태·오류 상태를 확인할 수 있습니다.
+
+1. `.env.example`을 `.env`로 복사하고 `NEIS_API_KEY`를 입력합니다.
+2. 다음 명령으로 프론트엔드와 백엔드를 함께 실행합니다.
+
+```sh
+docker compose up --build
+```
+
+브라우저에서 `http://localhost:5173`을 엽니다. 백엔드 API 문서는
+`http://localhost:8000/docs`, 상태 확인은 `http://localhost:8000/health`에서
+확인할 수 있습니다.
+
+로컬에서 각 구성 요소를 별도로 실행하려면 다음 명령을 사용합니다.
+
+```sh
+cd backend
+python -m pip install -e ".[dev]"
+uvicorn app.main:app --reload
+```
+
+```sh
+cd frontend
+npm install
+npm run dev
+```
+
 ## 커리큘럼
 
 | 단계 | 주제                                                                         |
