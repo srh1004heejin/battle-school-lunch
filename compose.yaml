@@ -1,4 +1,25 @@
 services:
+  mcp:
+    build:
+      context: .
+      dockerfile: src/mcp/Dockerfile
+    environment:
+      CONNECT_TIMEOUT_SECONDS: ${CONNECT_TIMEOUT_SECONDS:-5}
+      MAX_DATE_RANGE_DAYS: ${MAX_DATE_RANGE_DAYS:-31}
+      NEIS_API_KEY: ${NEIS_API_KEY}
+      NEIS_BASE_URL: ${NEIS_BASE_URL:-https://open.neis.go.kr/hub}
+      NEIS_PAGE_SIZE: ${NEIS_PAGE_SIZE:-1000}
+      REQUEST_TIMEOUT_SECONDS: ${REQUEST_TIMEOUT_SECONDS:-10}
+      RETRY_ATTEMPTS: ${RETRY_ATTEMPTS:-1}
+    ports:
+      - "${MCP_PORT:-8001}:8001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=2).read()"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
   backend:
     build:
       context: .

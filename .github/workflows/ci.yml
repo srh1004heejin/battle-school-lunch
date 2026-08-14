@@ -62,6 +62,23 @@ jobs:
         if: ${{ hashFiles('backend/pyproject.toml') == '' }}
         run: echo "backend/pyproject.toml is not present yet; skipping Python checks."
 
+  mcp:
+    name: MCP
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: src/mcp/pyproject.toml
+      - name: Install dependencies
+        working-directory: src/mcp
+        run: python -m pip install -e ".[dev]"
+      - name: Test
+        working-directory: src/mcp
+        run: pytest
+
   compose:
     name: Docker Compose
     runs-on: ubuntu-latest
