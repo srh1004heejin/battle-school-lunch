@@ -10,6 +10,7 @@ NEIS 공개 API를 활용해 초중고 급식 메뉴를 조회하고 AI 에이�
 - `src/openapi.json`: 프론트엔드-백엔드 내부 계약
 - `frontend/`: React + strict TypeScript UI, Vitest 통합 테스트, Playwright E2E
 - `backend/`: FastAPI API, NEIS 클라이언트, 정규화/오류 매핑, Pytest 단위·통합 테스트
+- `src/mcp/`: 공식 SDK 1.x 기반 Streamable HTTP MCP 서버와 테스트
 - `compose.yaml`, `compose.test.yaml`: 애플리케이션 실행 및 E2E용 구성
 
 ## 앱 기능
@@ -53,6 +54,18 @@ cd backend
 python -m pip install -e ".[dev]"
 python -m pytest
 ```
+
+### MCP 서버
+
+```powershell
+cd src/mcp
+python -m pip install -e ".[dev]"
+$env:NEIS_API_KEY='your-real-key'
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8001
+```
+
+MCP 엔드포인트는 `http://127.0.0.1:8001/mcp`이며 `search_schools`와
+`get_lunch_meals` 도구를 제공합니다.
 
 ### 수동 실행
 
@@ -162,6 +175,7 @@ docker compose -f compose.yaml -f compose.test.yaml up --build
 | `data/`            | 원본 XLSX와 외부 OpenAPI 계약        |
 | `docs/`            | 단계별 워크숍 가이드                 |
 | `frontend/`        | React 프론트엔드와 테스트            |
+| `src/mcp/`         | Streamable HTTP MCP 서버와 테스트     |
 | `mock_neis/`       | Compose용 NEIS mock Dockerfile       |
 | `src/openapi.json` | 내부 OpenAPI 계약                    |
 | `compose.yaml`     | 애플리케이션 Compose 구성            |

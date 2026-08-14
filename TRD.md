@@ -9,7 +9,7 @@
 
 ## 2. 기술 원칙과 제약
 
-- 애플리케이션은 React 기반 프론트엔드와 Python 기반 백엔드로 분리한다.
+- 애플리케이션은 React 프론트엔드, Python 백엔드와 독립 Python MCP 서버로 분리한다.
 - 프론트엔드는 NEIS API를 직접 호출하지 않고 백엔드의 내부 API만 호출한다.
 - 백엔드는 NEIS API 연동과 외부 응답의 검증 및 변환을 담당한다.
 - 외부 NEIS API의 기준 계약은 `data/openapi.json`으로 관리한다.
@@ -18,6 +18,8 @@
   구현한다. 외부 API 모델을 프론트엔드에 그대로 노출하지 않는다.
 - 프론트엔드와 백엔드는 Docker 이미지로 빌드하고 Docker Compose로 함께
   실행한다.
+- MCP 서버는 공식 Python MCP SDK 1.x의 Streamable HTTP 전송을 사용하고 NEIS를
+  직접 호출하되 백엔드 프로세스에 의존하지 않는다.
 - 비밀값은 환경 변수로 주입하고 이미지, 소스 코드 및 브라우저 번들에 포함하지
   않는다.
 
@@ -41,6 +43,16 @@ Python backend
   | HTTPS/JSON (data/openapi.json)
   v
 NEIS Open API
+
+MCP client
+  |
+  | Streamable HTTP
+  v
+Python MCP server
+  |
+  | HTTPS/JSON (data/openapi.json)
+  v
+NEIS Open API
 ```
 
 ### 목표 디렉터리
@@ -52,6 +64,7 @@ NEIS Open API
 ├── frontend/                 # React UI 및 내부 API 클라이언트
 ├── backend/                  # Python API 및 NEIS 클라이언트
 ├── src/
+│   ├── mcp/                  # 독립 MCP 서버 및 테스트
 │   └── openapi.json          # 프론트엔드-백엔드 내부 API 계약
 └── compose.yaml              # 로컬 통합 실행 구성
 ```
@@ -94,6 +107,16 @@ NEIS Open API
 
 백엔드는 외부 API의 예외 형식이나 필드 변경이 프론트엔드에 직접 전파되지 않게
 어댑터 경계를 유지한다.
+
+### 4.3 Python MCP 서버
+
+- `/mcp`에서 stateless Streamable HTTP를 제공한다.
+- `search_schools`, `get_lunch_meals` 도구와 JSON 입력 스키마를 등록한다.
+- `data/openapi.json`의 학교 및 급식 경로와 필드를 기준으로 NEIS를 호출한다.
+- 입력, 외부 응답과 날짜 범위를 독립적으로 검증한다.
+- 성공 결과는 구조화 콘텐츠로, 실패는 `isError: true`인 안정적인 코드와
+  메시지로 반환한다.
+- API 키, 외부 요청 쿼리 및 내부 예외 상세를 MCP 응답에 포함하지 않는다.
 
 ## 5. API 계약
 
@@ -235,7 +258,7 @@ NEIS Open API
 
 ## 8. Docker Compose 구성
 
-`compose.yaml`은 최소한 `frontend`와 `backend` 서비스를 정의한다.
+`compose.yaml`은 최소한 `frontend`, `backend`, `mcp` 서비스를 정의한다.
 
 ### frontend 서비스
 
@@ -251,6 +274,13 @@ NEIS Open API
   호스트에 노출한다.
 - NEIS 기본 URL, API 키, 요청 타임아웃 등 서버 전용 설정을 환경 변수로 받는다.
 - 의존 서비스가 실제 요청을 받을 수 있는지 확인하는 헬스 체크를 제공한다.
+
+### mcp 서비스
+
+- `src/mcp/Dockerfile`로 백엔드와 독립된 이미지를 빌드한다.
+- `/mcp`와 `/health`를 제공하며 기본 호스트 포트는 `8001`이다.
+- NEIS API 키, 기본 URL, 타임아웃, 페이지 크기와 재시도 설정을 환경 변수로 받는다.
+- 테스트 Compose에서는 백엔드와 동일한 제어 가능한 NEIS mock을 사용한다.
 
 ### 네트워크와 설정
 
@@ -318,7 +348,15 @@ E2E 테스트는 프론트엔드가 NEIS 대역을 직접 호출하지 않고 �
 경유하는지도 검증한다. 실제 NEIS 데이터나 운영 API의 가용성에 테스트 성공
 여부를 의존시키지 않는다.
 
-### 9.5 계약 및 실행 검사
+### 9.5 MCP 테스트
+
+- 도구 목록과 입력 스키마가 MCP 서버에 등록되는지 검증한다.
+- 학교 검색 및 중식 도구가 NEIS 계약에 맞는 쿼리를 생성하는지 검증한다.
+- 정상 구조화 결과와 입력 오류, 결과 없음, 잘못된 응답, 연결 실패 및 시간 초과
+  도구 오류를 검증한다.
+- 테스트는 mock transport를 사용하고 실제 API 키나 NEIS 가용성에 의존하지 않는다.
+
+### 9.6 계약 및 실행 검사
 
 - 내부 API 구현과 프론트엔드 클라이언트가 `src/openapi.json`과 일치하는지
   자동 검사한다.
@@ -340,6 +378,6 @@ E2E 테스트는 프론트엔드가 NEIS 대역을 직접 호출하지 않고 �
 - React 프론트엔드와 Python 백엔드의 책임이 분리되어 있다.
 - 프론트엔드 네트워크 요청은 `src/openapi.json`의 백엔드 API로만 향한다.
 - 백엔드 NEIS 클라이언트가 `data/openapi.json`에 따라 요청하고 응답을 검증한다.
-- Docker Compose로 두 애플리케이션을 빌드하고 실행할 수 있다.
+- Docker Compose로 프론트엔드, 백엔드와 독립 MCP 서버를 함께 실행할 수 있다.
 - 프론트엔드 통합 테스트, 백엔드 단위 및 통합 테스트, 전체 사용자 흐름 E2E
   테스트가 정상, 빈 결과, 입력 오류 및 외부 장애를 검증한다.

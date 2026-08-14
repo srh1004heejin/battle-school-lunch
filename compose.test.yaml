@@ -1,4 +1,12 @@
 services:
+  mcp:
+    environment:
+      NEIS_API_KEY: test-api-key
+      NEIS_BASE_URL: http://neis-mock:8081/hub
+    depends_on:
+      neis-mock:
+        condition: service_healthy
+
   backend:
     environment:
       BACKEND_CORS_ORIGIN: http://localhost:${FRONTEND_PORT:-8080}
