@@ -36,7 +36,10 @@ def create_app(
 ) -> FastAPI:
     config = settings or Settings.from_env()
     neis_client = NeisClient(config, transport=neis_transport)
-    repository = analysis_repository or SqliteAnalysisRepository(config.database_path)
+    repository = analysis_repository or SqliteAnalysisRepository(
+        config.database_path,
+        config.database_backup_path,
+    )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
