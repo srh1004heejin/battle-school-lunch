@@ -26,6 +26,7 @@ async def test_search_schools_collects_multiple_pages() -> None:
     request_counts: defaultdict[str, int] = defaultdict(int)
 
     def handler(request: httpx.Request) -> httpx.Response:
+        assert request.headers["Accept"] == "*/*"
         request_counts[request.url.params["pIndex"]] += 1
         page_index = int(request.url.params["pIndex"])
         payload = {
