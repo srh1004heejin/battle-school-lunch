@@ -97,6 +97,7 @@ def normalize_meal(row: MealServiceDietInfoRow) -> MealRecord:
         calories=_clean_text(row.calorie_info) or None,
         nutrition=_parse_nutrition(row.nutrition_info),
         origin=_clean_text(row.origin_info) or None,
+        mealCount=_clean_text(row.meal_count) or None,
     )
 
 

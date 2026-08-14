@@ -8,13 +8,17 @@ import time
 import uuid
 
 import httpx
+from agent_framework.ag_ui import add_agent_framework_fastapi_endpoint
 from fastapi import Depends, FastAPI, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from .errors import ApiError
-from .models import ErrorResponse, HealthResponse, MealSearchResponse, SchoolSearchResponse
+from .agent_workflow import GitHubCopilotEvaluationEngine
+from .analysis_entity import create_analysis_workflow
+from .evaluation import AnalysisEngine
+from .models import ErrorResponse, HealthResponse, MealSearchResponse, RandomSchoolResponse, SchoolSearchResponse
 from .neis_client import NeisClient
 from .settings import Settings
 from .validation import parse_api_date, validate_date_range, validate_school_identifier, validate_search_query
@@ -25,6 +29,7 @@ logger = logging.getLogger("battle_school_lunch")
 def create_app(
     settings: Settings | None = None,
     neis_transport: httpx.AsyncBaseTransport | None = None,
+    analysis_engine: AnalysisEngine | None = None,
 ) -> FastAPI:
     config = settings or Settings.from_env()
     neis_client = NeisClient(config, transport=neis_transport)
@@ -45,7 +50,7 @@ def create_app(
             CORSMiddleware,
             allow_origins=[config.backend_cors_origin],
             allow_credentials=False,
-            allow_methods=["GET"],
+            allow_methods=["GET", "POST"],
             allow_headers=["*"],
         )
 
@@ -145,6 +150,19 @@ def create_app(
         return SchoolSearchResponse(schools=schools)
 
     @app.get(
+        "/api/schools/random",
+        response_model=RandomSchoolResponse,
+        responses={
+            502: {"model": ErrorResponse},
+            503: {"model": ErrorResponse},
+            504: {"model": ErrorResponse},
+        },
+    )
+    async def get_random_schools(client: NeisClient = Depends(get_neis_client)) -> RandomSchoolResponse:
+        schools = await client.get_random_schools(limit=10)
+        return RandomSchoolResponse(schools=schools)
+
+    @app.get(
         "/api/schools/{education_office_code}/{school_code}/meals",
         response_model=MealSearchResponse,
         response_model_exclude_none=True,
@@ -194,6 +212,13 @@ def create_app(
                 "meals": [meal.model_dump(mode="json") for meal in meals],
             }
         )
+
+    engine = analysis_engine or GitHubCopilotEvaluationEngine(config)
+    add_agent_framework_fastapi_endpoint(
+        app=app,
+        agent=create_analysis_workflow(engine),
+        path="/api/analysis",
+    )
 
     return app
 

@@ -13,6 +13,9 @@ services:
       NEIS_PAGE_SIZE: ${NEIS_PAGE_SIZE:-1000}
       REQUEST_TIMEOUT_SECONDS: ${REQUEST_TIMEOUT_SECONDS:-10}
       RETRY_ATTEMPTS: ${RETRY_ATTEMPTS:-1}
+      AGENT_MCP_URL: http://mcp:8000/mcp
+      GITHUB_COPILOT_MODEL: ${GITHUB_COPILOT_MODEL:-}
+      COPILOT_GITHUB_TOKEN: ${COPILOT_GITHUB_TOKEN:-}
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     healthcheck:
@@ -21,6 +24,21 @@ services:
       timeout: 3s
       retries: 5
       start_period: 5s
+    depends_on:
+      mcp:
+        condition: service_started
+
+  mcp:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: ["python", "-m", "app.mcp_server"]
+    environment:
+      BACKEND_INTERNAL_URL: http://backend:8000
+      MCP_HOST: 0.0.0.0
+      MCP_SERVER_PORT: 8000
+    ports:
+      - "${MCP_PORT:-8001}:8000"
 
   frontend:
     build:

@@ -5,6 +5,28 @@
   padding: 2rem 1rem 4rem;
 }
 
+.top-navigation {
+  background: rgba(255, 255, 255, 0.96);
+  border-bottom: 1px solid #dbe3f0;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.nav-tab {
+  background: transparent;
+  color: #334155;
+}
+
+.nav-tab.active {
+  background: #2563eb;
+  color: #ffffff;
+}
+
 .page-header {
   margin-bottom: 2rem;
 }
@@ -76,6 +98,7 @@
 }
 
 input,
+textarea,
 button {
   border-radius: 0.75rem;
   font: inherit;
@@ -86,10 +109,66 @@ input {
   padding: 0.85rem 1rem;
 }
 
+textarea {
+  border: 1px solid #94a3b8;
+  border-radius: 0.75rem;
+  font: inherit;
+  padding: 0.85rem 1rem;
+  resize: vertical;
+}
+
 input:focus,
+textarea:focus,
 button:focus {
   outline: 3px solid rgba(37, 99, 235, 0.25);
   outline-offset: 2px;
+}
+
+.analysis-flow {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.section-title-row {
+  align-items: start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.candidate-grid,
+.score-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+}
+
+.analysis-results {
+  margin-top: 1.5rem;
+}
+
+.score-card {
+  background: #f8fafc;
+  border-radius: 0.85rem;
+  padding: 1rem;
+}
+
+.score-card dl,
+.score-card dd {
+  margin: 0;
+}
+
+.area-score {
+  border-top: 1px solid #dbe3f0;
+  padding: 0.9rem 0;
+}
+
+.area-score dt,
+.area-score dd {
+  font-weight: 700;
 }
 
 button {

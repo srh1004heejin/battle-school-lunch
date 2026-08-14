@@ -39,6 +39,24 @@ async def test_search_schools_returns_internal_shape() -> None:
 
 
 @pytest.mark.asyncio
+async def test_random_schools_returns_exactly_ten_candidates() -> None:
+    mock_neis_app = create_mock_neis_app()
+    backend_app = create_app(
+        settings=build_settings(),
+        neis_transport=httpx.ASGITransport(app=mock_neis_app),
+    )
+
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=backend_app),
+        base_url="http://backend.test",
+    ) as client:
+        response = await client.get("/api/schools/random")
+
+    assert response.status_code == 200
+    assert len(response.json()["schools"]) == 10
+
+
+@pytest.mark.asyncio
 async def test_get_meals_returns_sorted_deduplicated_meals() -> None:
     mock_neis_app = create_mock_neis_app()
     backend_app = create_app(
@@ -144,3 +162,18 @@ def test_app_openapi_matches_internal_contract() -> None:
     expected_contract = json.loads(contract_path.read_text(encoding="utf-8"))
 
     assert backend_app.openapi() == expected_contract
+
+
+def test_analysis_endpoint_is_registered_for_ag_ui_posts() -> None:
+    backend_app = create_app(
+        settings=build_settings(),
+        neis_transport=httpx.ASGITransport(app=create_mock_neis_app()),
+    )
+    analysis_routes = [
+        route
+        for route in backend_app.routes
+        if getattr(route, "path", None) == "/api/analysis"
+    ]
+
+    assert len(analysis_routes) == 1
+    assert "POST" in analysis_routes[0].methods

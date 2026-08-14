@@ -38,6 +38,10 @@ class SchoolSearchResponse(BaseModel):
     schools: list[SchoolSummary]
 
 
+class RandomSchoolResponse(BaseModel):
+    schools: list[SchoolSummary] = Field(min_length=10, max_length=10)
+
+
 class MealRecord(BaseModel):
     date: date
     mealType: Literal["lunch"]
@@ -45,6 +49,7 @@ class MealRecord(BaseModel):
     calories: str | None = None
     nutrition: dict[str, str] | None = None
     origin: str | None = None
+    mealCount: str | None = None
 
 
 class MealSearchResponse(BaseModel):

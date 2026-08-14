@@ -43,6 +43,17 @@ def create_mock_neis_app() -> FastAPI:
             ]
         else:
             rows = list(_school_rows())
+            template = rows[0]
+            for index in range(len(rows), 10):
+                rows.append(
+                    {
+                        **template,
+                        "ATPT_OFCDC_SC_CODE": f"R{index}",
+                        "SD_SCHUL_CODE": f"80000{index}",
+                        "SCHUL_NM": f"무작위학교{index + 1}",
+                        "ORG_RDNMA": f"서울특별시 예시로 {index + 1}",
+                    }
+                )
 
         if not rows:
             return JSONResponse(

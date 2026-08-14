@@ -1,5 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
+import AnalysisPage from './AnalysisPage';
 import { ApiClientError, getMeals, searchSchools } from './api/client';
 import type { MealSearchResponse, School } from './api/types';
 
@@ -21,6 +22,7 @@ type MealState =
 const SEARCH_DEBOUNCE_MS = 350;
 
 function App() {
+  const [activePage, setActivePage] = useState<'lookup' | 'analysis'>('lookup');
   const [searchTerm, setSearchTerm] = useState('');
   const [searchState, setSearchState] = useState<SearchState>({ status: 'idle' });
   const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
@@ -254,7 +256,29 @@ function App() {
   };
 
   return (
-    <main className="page-shell">
+    <>
+      <nav className="top-navigation" aria-label="주요 페이지">
+        <button
+          type="button"
+          className={activePage === 'lookup' ? 'nav-tab active' : 'nav-tab'}
+          aria-current={activePage === 'lookup' ? 'page' : undefined}
+          onClick={() => setActivePage('lookup')}
+        >
+          급식 정보 조회
+        </button>
+        <button
+          type="button"
+          className={activePage === 'analysis' ? 'nav-tab active' : 'nav-tab'}
+          aria-current={activePage === 'analysis' ? 'page' : undefined}
+          onClick={() => setActivePage('analysis')}
+        >
+          급식 정보 분석
+        </button>
+      </nav>
+      {activePage === 'analysis' ? (
+        <AnalysisPage />
+      ) : (
+      <main className="page-shell">
       <div className="page-header">
         <p className="eyebrow">Battle School Lunch</p>
         <h1>학교 급식 조회 앱</h1>
@@ -477,6 +501,11 @@ function App() {
                         <pre>{meal.origin}</pre>
                       </div>
                     ) : null}
+                    {meal.mealCount ? (
+                      <p className="meal-extra">
+                        <strong>급식인원수</strong> {meal.mealCount}명
+                      </p>
+                    ) : null}
                     {meal.nutrition ? (
                       <dl className="nutrition-list">
                         {Object.entries(meal.nutrition).map(([label, value]) => (
@@ -499,7 +528,9 @@ function App() {
           )}
         </section>
       </div>
-    </main>
+      </main>
+      )}
+    </>
   );
 }
 

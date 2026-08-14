@@ -1,4 +1,14 @@
-import type { Meal, MealSearchParams, MealSearchResponse, School, SchoolSearchResponse } from './types';
+import { HttpAgent } from '@ag-ui/client';
+import type {
+  AnalysisRequest,
+  AnalysisResult,
+  Meal,
+  MealSearchParams,
+  MealSearchResponse,
+  RandomSchoolResponse,
+  School,
+  SchoolSearchResponse,
+} from './types';
 
 const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? '';
 
@@ -32,6 +42,59 @@ export async function getMeals(params: MealSearchParams, signal?: AbortSignal): 
   );
 
   return requestJson(url, isMealSearchResponse, signal);
+}
+
+export async function getRandomSchools(signal?: AbortSignal): Promise<RandomSchoolResponse> {
+  const url = createUrl('/api/schools/random', {});
+  const response = await requestJson(url, isSchoolSearchResponse, signal);
+  if (response.schools.length !== 10) {
+    throw new ApiClientError(502, 'INVALID_API_RESPONSE', '학교 후보는 정확히 10개여야 합니다.', null);
+  }
+  return response;
+}
+
+export async function analyzeMeals(
+  request: AnalysisRequest,
+  onProgress?: (message: string) => void,
+): Promise<AnalysisResult> {
+  const agent = new HttpAgent({
+    url: createUrl('/api/analysis', {}),
+    agentId: 'school-lunch-evaluation',
+    threadId: crypto.randomUUID(),
+    initialMessages: [
+      {
+        id: crypto.randomUUID(),
+        role: 'user',
+        content: JSON.stringify(request),
+      },
+    ],
+  });
+
+  const result = await agent.runAgent(
+    {},
+    {
+      onRunStartedEvent: () => {
+        onProgress?.('분석 워크플로를 시작했습니다.');
+      },
+      onStepStartedEvent: ({ event }) => {
+        onProgress?.(`${event.stepName} 단계를 실행하고 있습니다.`);
+      },
+    },
+  );
+  const assistantMessage = [...result.newMessages].reverse().find((message) => message.role === 'assistant');
+  if (!assistantMessage || typeof assistantMessage.content !== 'string') {
+    throw new ApiClientError(502, 'INVALID_AGENT_RESPONSE', '분석 결과가 비어 있습니다.', null);
+  }
+
+  try {
+    const payload: unknown = JSON.parse(assistantMessage.content);
+    if (!isAnalysisResult(payload)) {
+      throw new Error('invalid shape');
+    }
+    return payload;
+  } catch {
+    throw new ApiClientError(502, 'INVALID_AGENT_RESPONSE', '분석 결과 형식이 올바르지 않습니다.', null);
+  }
 }
 
 function createUrl(pathname: string, queryParams: Record<string, string>): string {
@@ -124,7 +187,8 @@ function isMeal(value: unknown): value is Meal {
     value.menu.every((item) => typeof item === 'string') &&
     (value.calories === undefined || typeof value.calories === 'string') &&
     (value.nutrition === undefined || isStringRecord(value.nutrition)) &&
-    (value.origin === undefined || typeof value.origin === 'string')
+    (value.origin === undefined || typeof value.origin === 'string') &&
+    (value.mealCount === undefined || typeof value.mealCount === 'string')
   );
 }
 
@@ -140,6 +204,57 @@ function isMealSearchResponse(value: unknown): value is MealSearchResponse {
     typeof value.to === 'string' &&
     Array.isArray(value.meals) &&
     value.meals.every(isMeal)
+  );
+}
+
+function isAnalysisResult(value: unknown): value is AnalysisResult {
+  const validAreas = new Set(['nutrition_balance', 'healthiness', 'ingredient_menu_quality']);
+  return (
+    isRecord(value) &&
+    Array.isArray(value.scores) &&
+    value.scores.length === 2 &&
+    value.scores.every(
+      (score) =>
+        isRecord(score) &&
+        isRecord(score.school) &&
+        typeof score.school.schoolCode === 'string' &&
+        typeof score.school.name === 'string' &&
+        typeof score.totalScore === 'number' &&
+        Array.isArray(score.areas) &&
+        score.areas.length === 3 &&
+        score.areas.every(
+          (area) =>
+            isRecord(area) &&
+            typeof area.area === 'string' &&
+            validAreas.has(area.area) &&
+            typeof area.rating === 'number' &&
+            typeof area.weight === 'number' &&
+            typeof area.weightedScore === 'number' &&
+            typeof area.rationale === 'string' &&
+            Array.isArray(area.evidence) &&
+            area.evidence.every((evidence) => typeof evidence === 'string') &&
+            Array.isArray(area.estimatedFlags) &&
+            area.estimatedFlags.every((flag) => typeof flag === 'string'),
+        ),
+    ) &&
+    (value.outcome === 'first' || value.outcome === 'second' || value.outcome === 'tie') &&
+    (
+      value.winnerSchool === null ||
+      (
+        isRecord(value.winnerSchool) &&
+        typeof value.winnerSchool.educationOfficeCode === 'string' &&
+        typeof value.winnerSchool.schoolCode === 'string' &&
+        typeof value.winnerSchool.name === 'string'
+      )
+    ) &&
+    isRecord(value.review) &&
+    typeof value.review.summary === 'string' &&
+    typeof value.review.keyReason === 'string' &&
+    typeof value.review.firstSchoolImprovement === 'string' &&
+    typeof value.review.secondSchoolImprovement === 'string' &&
+    Array.isArray(value.review.qualityWarnings) &&
+    value.review.qualityWarnings.every((warning) => typeof warning === 'string') &&
+    typeof value.disclaimer === 'string'
   );
 }
 

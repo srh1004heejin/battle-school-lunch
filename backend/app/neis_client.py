@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from json import JSONDecodeError
+import secrets
 from typing import Any, TypeVar
 
 import httpx
@@ -51,6 +52,38 @@ class NeisClient:
             {"SCHUL_NM": query},
         )
         return dedupe_and_sort_schools([normalize_school(row) for row in rows])
+
+    async def get_random_schools(self, limit: int = 10) -> list[SchoolSummary]:
+        params = {
+            "Key": self._settings.neis_api_key,
+            "Type": "json",
+            "pSize": str(limit),
+            "pIndex": "1",
+        }
+        first_rows, total_count = await self._fetch_page(
+            path="/schoolInfo",
+            service_key="schoolInfo",
+            row_model=SchoolInfoRow,
+            params=params,
+        )
+        full_page_count = total_count // limit
+        if full_page_count <= 1:
+            rows = first_rows
+        else:
+            selected_page = secrets.randbelow(full_page_count) + 1
+            if selected_page == 1:
+                rows = first_rows
+            else:
+                rows, _ = await self._fetch_page(
+                    path="/schoolInfo",
+                    service_key="schoolInfo",
+                    row_model=SchoolInfoRow,
+                    params={**params, "pIndex": str(selected_page)},
+                )
+        schools = dedupe_and_sort_schools([normalize_school(row) for row in rows])
+        if len(schools) < limit:
+            raise ApiError(502, "NEIS_BAD_RESPONSE", "무작위 학교 후보를 충분히 가져오지 못했습니다.")
+        return schools[:limit]
 
     async def get_school(self, education_office_code: str, school_code: str) -> SelectedSchool | None:
         rows = await self._fetch_paginated_rows(
