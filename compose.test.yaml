@@ -1,0 +1,22 @@
+services:
+  backend:
+    environment:
+      BACKEND_CORS_ORIGIN: http://localhost:${FRONTEND_PORT:-8080}
+      NEIS_API_KEY: test-api-key
+      NEIS_BASE_URL: http://neis-mock:8081/hub
+    depends_on:
+      neis-mock:
+        condition: service_healthy
+
+  neis-mock:
+    build:
+      context: .
+      dockerfile: mock_neis/Dockerfile
+    ports:
+      - "8081:8081"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/hub/schoolInfo?Key=test&Type=json&pIndex=1&pSize=1&SCHUL_NM=%ED%95%9C%EA%B5%AD', timeout=2).read()"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s

@@ -1,0 +1,679 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "NEIS Open API Contract",
+    "version": "1.0.0",
+    "description": "학교기본정보와 급식식단정보 XLSX 명세서를 바탕으로 정리한 NEIS 외부 OpenAPI 계약입니다. JSON 호출만 문서화했습니다."
+  },
+  "servers": [
+    {
+      "url": "https://open.neis.go.kr/hub"
+    }
+  ],
+  "paths": {
+    "/schoolInfo": {
+      "get": {
+        "operationId": "getSchoolInfo",
+        "summary": "학교 기본정보 조회",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Key"
+          },
+          {
+            "$ref": "#/components/parameters/Type"
+          },
+          {
+            "$ref": "#/components/parameters/PIndex"
+          },
+          {
+            "$ref": "#/components/parameters/PSize"
+          },
+          {
+            "$ref": "#/components/parameters/AtptOfcdcScCodeOptional"
+          },
+          {
+            "$ref": "#/components/parameters/SdSchulCodeOptional"
+          },
+          {
+            "$ref": "#/components/parameters/SchulNm"
+          },
+          {
+            "$ref": "#/components/parameters/SchulKndScNm"
+          },
+          {
+            "$ref": "#/components/parameters/LctnScNm"
+          },
+          {
+            "$ref": "#/components/parameters/FondScNm"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NEIS는 성공, 결과 없음, 오류를 모두 200 본문으로 전달합니다.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/SchoolInfoSuccessEnvelope"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SchoolInfoNoDataEnvelope"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NeisStandaloneResultEnvelope"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mealServiceDietInfo": {
+      "get": {
+        "operationId": "getMealServiceDietInfo",
+        "summary": "급식 식단정보 조회",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Key"
+          },
+          {
+            "$ref": "#/components/parameters/Type"
+          },
+          {
+            "$ref": "#/components/parameters/PIndex"
+          },
+          {
+            "$ref": "#/components/parameters/PSize"
+          },
+          {
+            "$ref": "#/components/parameters/AtptOfcdcScCodeRequired"
+          },
+          {
+            "$ref": "#/components/parameters/SdSchulCodeRequired"
+          },
+          {
+            "$ref": "#/components/parameters/MmealScCode"
+          },
+          {
+            "$ref": "#/components/parameters/MlsvYmd"
+          },
+          {
+            "$ref": "#/components/parameters/MlsvFromYmd"
+          },
+          {
+            "$ref": "#/components/parameters/MlsvToYmd"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NEIS는 성공, 결과 없음, 오류를 모두 200 본문으로 전달합니다.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/MealServiceDietInfoSuccessEnvelope"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MealServiceDietInfoNoDataEnvelope"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NeisStandaloneResultEnvelope"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "Key": {
+        "name": "Key",
+        "in": "query",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "인증키"
+      },
+      "Type": {
+        "name": "Type",
+        "in": "query",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "json",
+            "xml"
+          ],
+          "default": "json"
+        },
+        "description": "호출 문서 형식"
+      },
+      "PIndex": {
+        "name": "pIndex",
+        "in": "query",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        },
+        "description": "페이지 위치"
+      },
+      "PSize": {
+        "name": "pSize",
+        "in": "query",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "default": 100
+        },
+        "description": "페이지 당 요청 수"
+      },
+      "AtptOfcdcScCodeOptional": {
+        "name": "ATPT_OFCDC_SC_CODE",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "description": "시도교육청코드"
+      },
+      "AtptOfcdcScCodeRequired": {
+        "name": "ATPT_OFCDC_SC_CODE",
+        "in": "query",
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "description": "시도교육청코드"
+      },
+      "SdSchulCodeOptional": {
+        "name": "SD_SCHUL_CODE",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "description": "행정표준코드"
+      },
+      "SdSchulCodeRequired": {
+        "name": "SD_SCHUL_CODE",
+        "in": "query",
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "description": "행정표준코드"
+      },
+      "SchulNm": {
+        "name": "SCHUL_NM",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "description": "학교명"
+      },
+      "SchulKndScNm": {
+        "name": "SCHUL_KND_SC_NM",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "description": "학교종류명"
+      },
+      "LctnScNm": {
+        "name": "LCTN_SC_NM",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "description": "시도명"
+      },
+      "FondScNm": {
+        "name": "FOND_SC_NM",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "description": "설립명"
+      },
+      "MmealScCode": {
+        "name": "MMEAL_SC_CODE",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "description": "식사코드"
+      },
+      "MlsvYmd": {
+        "name": "MLSV_YMD",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9]{8}$"
+        },
+        "description": "급식일자"
+      },
+      "MlsvFromYmd": {
+        "name": "MLSV_FROM_YMD",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9]{8}$"
+        },
+        "description": "급식시작일자"
+      },
+      "MlsvToYmd": {
+        "name": "MLSV_TO_YMD",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9]{8}$"
+        },
+        "description": "급식종료일자"
+      }
+    },
+    "schemas": {
+      "NeisResultStatus": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "CODE",
+          "MESSAGE"
+        ],
+        "properties": {
+          "CODE": {
+            "type": "string"
+          },
+          "MESSAGE": {
+            "type": "string"
+          }
+        }
+      },
+      "NeisHeadCount": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "list_total_count"
+        ],
+        "properties": {
+          "list_total_count": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "NeisHeadResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "RESULT"
+        ],
+        "properties": {
+          "RESULT": {
+            "$ref": "#/components/schemas/NeisResultStatus"
+          }
+        }
+      },
+      "SchoolInfoRow": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "ATPT_OFCDC_SC_CODE",
+          "ATPT_OFCDC_SC_NM",
+          "SD_SCHUL_CODE",
+          "SCHUL_NM"
+        ],
+        "properties": {
+          "ATPT_OFCDC_SC_CODE": {
+            "type": "string"
+          },
+          "ATPT_OFCDC_SC_NM": {
+            "type": "string"
+          },
+          "SD_SCHUL_CODE": {
+            "type": "string"
+          },
+          "SCHUL_NM": {
+            "type": "string"
+          },
+          "ENG_SCHUL_NM": {
+            "type": "string"
+          },
+          "SCHUL_KND_SC_NM": {
+            "type": "string"
+          },
+          "LCTN_SC_NM": {
+            "type": "string"
+          },
+          "JU_ORG_NM": {
+            "type": "string"
+          },
+          "FOND_SC_NM": {
+            "type": "string"
+          },
+          "ORG_RDNZC": {
+            "type": "string"
+          },
+          "ORG_RDNMA": {
+            "type": "string"
+          },
+          "ORG_RDNDA": {
+            "type": "string"
+          },
+          "ORG_TELNO": {
+            "type": "string"
+          },
+          "HMPG_ADRES": {
+            "type": "string"
+          },
+          "COEDU_SC_NM": {
+            "type": "string"
+          },
+          "ORG_FAXNO": {
+            "type": "string"
+          },
+          "HS_SC_NM": {
+            "type": "string"
+          },
+          "INDST_SPECL_CCCCL_EXST_YN": {
+            "type": "string"
+          },
+          "HS_GNRL_BUSNS_SC_NM": {
+            "type": "string"
+          },
+          "SPCLY_PURPS_HS_ORD_NM": {
+            "type": "string"
+          },
+          "ENE_BFE_SEHF_SC_NM": {
+            "type": "string"
+          },
+          "DGHT_SC_NM": {
+            "type": "string"
+          },
+          "FOND_YMD": {
+            "type": "string"
+          },
+          "FOAS_MEMRD": {
+            "type": "string"
+          },
+          "LOAD_DTM": {
+            "type": "string"
+          }
+        }
+      },
+      "MealServiceDietInfoRow": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "ATPT_OFCDC_SC_CODE",
+          "ATPT_OFCDC_SC_NM",
+          "SD_SCHUL_CODE",
+          "SCHUL_NM",
+          "MMEAL_SC_CODE",
+          "MMEAL_SC_NM",
+          "MLSV_YMD",
+          "DDISH_NM"
+        ],
+        "properties": {
+          "ATPT_OFCDC_SC_CODE": {
+            "type": "string"
+          },
+          "ATPT_OFCDC_SC_NM": {
+            "type": "string"
+          },
+          "SD_SCHUL_CODE": {
+            "type": "string"
+          },
+          "SCHUL_NM": {
+            "type": "string"
+          },
+          "MMEAL_SC_CODE": {
+            "type": "string"
+          },
+          "MMEAL_SC_NM": {
+            "type": "string"
+          },
+          "MLSV_YMD": {
+            "type": "string",
+            "pattern": "^[0-9]{8}$"
+          },
+          "MLSV_FGR": {
+            "type": "string"
+          },
+          "DDISH_NM": {
+            "type": "string"
+          },
+          "ORPLC_INFO": {
+            "type": "string"
+          },
+          "CAL_INFO": {
+            "type": "string"
+          },
+          "NTR_INFO": {
+            "type": "string"
+          },
+          "MLSV_FROM_YMD": {
+            "type": "string",
+            "pattern": "^[0-9]{8}$"
+          },
+          "MLSV_TO_YMD": {
+            "type": "string",
+            "pattern": "^[0-9]{8}$"
+          },
+          "LOAD_DTM": {
+            "type": "string"
+          }
+        }
+      },
+      "SchoolInfoSuccessEnvelope": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schoolInfo"
+        ],
+        "properties": {
+          "schoolInfo": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "prefixItems": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "head"
+                ],
+                "properties": {
+                  "head": {
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "prefixItems": [
+                      {
+                        "$ref": "#/components/schemas/NeisHeadCount"
+                      },
+                      {
+                        "$ref": "#/components/schemas/NeisHeadResult"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "row"
+                ],
+                "properties": {
+                  "row": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/SchoolInfoRow"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "SchoolInfoNoDataEnvelope": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schoolInfo"
+        ],
+        "properties": {
+          "schoolInfo": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 1,
+            "prefixItems": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "head"
+                ],
+                "properties": {
+                  "head": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 1,
+                    "prefixItems": [
+                      {
+                        "$ref": "#/components/schemas/NeisHeadResult"
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "MealServiceDietInfoSuccessEnvelope": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "mealServiceDietInfo"
+        ],
+        "properties": {
+          "mealServiceDietInfo": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "prefixItems": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "head"
+                ],
+                "properties": {
+                  "head": {
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "prefixItems": [
+                      {
+                        "$ref": "#/components/schemas/NeisHeadCount"
+                      },
+                      {
+                        "$ref": "#/components/schemas/NeisHeadResult"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "row"
+                ],
+                "properties": {
+                  "row": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/MealServiceDietInfoRow"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "MealServiceDietInfoNoDataEnvelope": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "mealServiceDietInfo"
+        ],
+        "properties": {
+          "mealServiceDietInfo": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 1,
+            "prefixItems": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "head"
+                ],
+                "properties": {
+                  "head": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 1,
+                    "prefixItems": [
+                      {
+                        "$ref": "#/components/schemas/NeisHeadResult"
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "NeisStandaloneResultEnvelope": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "RESULT"
+        ],
+        "properties": {
+          "RESULT": {
+            "$ref": "#/components/schemas/NeisResultStatus"
+          }
+        }
+      }
+    }
+  }
+}
