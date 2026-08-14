@@ -16,6 +16,9 @@ services:
       AGENT_MCP_URL: http://mcp:8000/mcp
       GITHUB_COPILOT_MODEL: ${GITHUB_COPILOT_MODEL:-}
       COPILOT_GITHUB_TOKEN: ${COPILOT_GITHUB_TOKEN:-}
+      DATABASE_PATH: /app/backend/data/analyses.db
+    volumes:
+      - analysis-data:/app/backend/data
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     healthcheck:
@@ -55,3 +58,6 @@ services:
       timeout: 3s
       retries: 5
       start_period: 5s
+
+volumes:
+  analysis-data:

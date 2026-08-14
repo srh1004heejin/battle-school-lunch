@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
 import json
@@ -17,7 +18,8 @@ from fastapi.responses import JSONResponse
 from .errors import ApiError
 from .agent_workflow import GitHubCopilotEvaluationEngine
 from .analysis_entity import create_analysis_workflow
-from .evaluation import AnalysisEngine
+from .database import AnalysisRepository, PersistingAnalysisEngine, SqliteAnalysisRepository
+from .evaluation import AnalysisEngine, StoredAnalysis
 from .models import ErrorResponse, HealthResponse, MealSearchResponse, RandomSchoolResponse, SchoolSearchResponse
 from .neis_client import NeisClient
 from .settings import Settings
@@ -30,12 +32,15 @@ def create_app(
     settings: Settings | None = None,
     neis_transport: httpx.AsyncBaseTransport | None = None,
     analysis_engine: AnalysisEngine | None = None,
+    analysis_repository: AnalysisRepository | None = None,
 ) -> FastAPI:
     config = settings or Settings.from_env()
     neis_client = NeisClient(config, transport=neis_transport)
+    repository = analysis_repository or SqliteAnalysisRepository(config.database_path)
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
+        await asyncio.to_thread(repository.initialize)
         try:
             yield
         finally:
@@ -44,6 +49,7 @@ def create_app(
     app = FastAPI(title=config.app_name, lifespan=lifespan, docs_url=None, redoc_url=None)
     app.state.settings = config
     app.state.neis_client = neis_client
+    app.state.analysis_repository = repository
 
     if config.backend_cors_origin:
         app.add_middleware(
@@ -129,6 +135,9 @@ def create_app(
     def get_neis_client(request: Request) -> NeisClient:
         return request.app.state.neis_client
 
+    def get_analysis_repository(request: Request) -> AnalysisRepository:
+        return request.app.state.analysis_repository
+
     @app.get("/api/health", response_model=HealthResponse)
     async def health() -> HealthResponse:
         return HealthResponse(status="ok")
@@ -213,7 +222,24 @@ def create_app(
             }
         )
 
-    engine = analysis_engine or GitHubCopilotEvaluationEngine(config)
+    @app.get(
+        "/api/analyses/{analysis_id}",
+        response_model=StoredAnalysis,
+        responses={404: {"model": ErrorResponse}},
+    )
+    async def get_analysis(
+        analysis_id: str,
+        storage: AnalysisRepository = Depends(get_analysis_repository),
+    ) -> StoredAnalysis:
+        stored = await asyncio.to_thread(storage.get, analysis_id)
+        if stored is None:
+            raise ApiError(404, "ANALYSIS_NOT_FOUND", "저장된 분석 결과를 찾을 수 없습니다.")
+        return stored
+
+    engine = PersistingAnalysisEngine(
+        analysis_engine or GitHubCopilotEvaluationEngine(config),
+        repository,
+    )
     add_agent_framework_fastapi_endpoint(
         app=app,
         agent=create_analysis_workflow(engine),

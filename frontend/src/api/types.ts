@@ -73,6 +73,7 @@ export interface SchoolScore {
 }
 
 export interface AnalysisResult {
+  analysisId: string;
   scores: SchoolScore[];
   outcome: 'first' | 'second' | 'tie';
   winnerSchool: Pick<School, 'educationOfficeCode' | 'schoolCode' | 'name'> | null;

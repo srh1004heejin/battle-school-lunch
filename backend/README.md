@@ -24,3 +24,30 @@ UI로 사용하지 않습니다.
 Docker처럼 대화형 로그인을 사용할 수 없는 환경에서는 Copilot 사용 권한이 있는
 토큰을 `COPILOT_GITHUB_TOKEN` 환경 변수로 주입합니다. 토큰을 이미지나 소스에
 포함하지 마세요.
+
+## 분석 결과 데이터베이스
+
+분석 결과는 별도 서버 없이 로컬 개발과 단일 컨테이너 배포에서 일관되게 사용할 수
+있고, 학교·분석 요청·에이전트별 점수 사이의 관계와 트랜잭션을 보장하는 SQLite에
+저장합니다. 기본 파일은 `data/analyses.db`이며 `DATABASE_PATH`로 변경할 수 있습니다.
+Docker Compose에서는 `analysis-data` 볼륨에 파일을 보존합니다.
+
+스키마는 다음 관계로 구성됩니다.
+
+- `schools`: 교육청 코드와 학교 코드로 식별되는 학교
+- `analysis_requests`: 분석 날짜, 프롬프트, 승패/동점, 총평과 비교 결과
+- `analysis_schools`: 분석 요청과 두 학교 및 총점의 연결
+- `agent_results`: 학교별 세 전문 에이전트의 평점, 가중 점수, 근거와 추정 표시
+
+애플리케이션 시작 시 `app/migrations/001_initial.sql`이 자동 적용됩니다. 새 마이그레이션은
+번호가 증가하는 SQL 파일로 추가하고 `PRAGMA user_version`을 함께 올립니다. 현재
+마이그레이션을 수동 적용하려면 백엔드 디렉터리에서 아래 명령을 실행합니다.
+
+```sh
+python -c "from app.database import SqliteAnalysisRepository; from app.settings import Settings; s=Settings.from_env(); SqliteAnalysisRepository(s.database_path).initialize()"
+```
+
+완료된 분석 응답의 `analysisId`를
+`GET /api/analyses/{analysisId}`에 전달하면 분석 날짜, 두 학교, 에이전트별 결과와
+점수, 승패/동점 및 총평을 다시 조회할 수 있습니다. 분석 저장은 하나의 트랜잭션으로
+실행되어 일부 행만 남지 않습니다.

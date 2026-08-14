@@ -211,6 +211,7 @@ function isAnalysisResult(value: unknown): value is AnalysisResult {
   const validAreas = new Set(['nutrition_balance', 'healthiness', 'ingredient_menu_quality']);
   return (
     isRecord(value) &&
+    typeof value.analysisId === 'string' &&
     Array.isArray(value.scores) &&
     value.scores.length === 2 &&
     value.scores.every(

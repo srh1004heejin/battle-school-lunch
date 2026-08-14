@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Literal, Protocol, TypeVar
 
@@ -86,11 +86,20 @@ class FinalReview(BaseModel):
 
 
 class AnalysisResult(BaseModel):
+    analysisId: str | None = None
     scores: list[SchoolScore] = Field(min_length=2, max_length=2)
     outcome: Outcome
     winnerSchool: SelectedSchool | None
     review: FinalReview
     disclaimer: str = "이 분석은 영양사의 전문 진단을 대체하지 않습니다."
+
+
+class StoredAnalysis(AnalysisResult):
+    analysisId: str
+    analysisDate: date
+    schools: list[SelectedSchool] = Field(min_length=2, max_length=2)
+    prompt: str
+    createdAt: datetime
 
 
 class AnalysisEngine(Protocol):

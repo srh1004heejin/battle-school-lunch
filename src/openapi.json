@@ -191,6 +191,38 @@
           }
         }
       }
+    },
+    "/api/analyses/{analysis_id}": {
+      "get": {
+        "operationId": "getAnalysis",
+        "summary": "저장된 분석 결과 조회",
+        "parameters": [
+          {
+            "name": "analysis_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "학교, 분석 일자, 에이전트별 점수와 총평을 포함한 분석 결과",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoredAnalysis"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -206,7 +238,7 @@
         }
       },
       "Error404": {
-        "description": "요청한 학교를 찾을 수 없습니다.",
+        "description": "요청한 리소스를 찾을 수 없습니다.",
         "content": {
           "application/json": {
             "schema": {
@@ -449,6 +481,186 @@
             "items": {
               "$ref": "#/components/schemas/Meal"
             }
+          }
+        }
+      },
+      "WeightedAreaScore": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "area",
+          "rating",
+          "weight",
+          "weightedScore",
+          "rationale",
+          "evidence",
+          "estimatedFlags"
+        ],
+        "properties": {
+          "area": {
+            "type": "string",
+            "enum": [
+              "nutrition_balance",
+              "healthiness",
+              "ingredient_menu_quality"
+            ]
+          },
+          "rating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "weight": {
+            "type": "integer"
+          },
+          "weightedScore": {
+            "type": "number"
+          },
+          "rationale": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "estimatedFlags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "SchoolScore": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "school",
+          "areas",
+          "totalScore"
+        ],
+        "properties": {
+          "school": {
+            "$ref": "#/components/schemas/SelectedSchool"
+          },
+          "areas": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "$ref": "#/components/schemas/WeightedAreaScore"
+            }
+          },
+          "totalScore": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          }
+        }
+      },
+      "AnalysisReview": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "summary",
+          "keyReason",
+          "firstSchoolImprovement",
+          "secondSchoolImprovement",
+          "qualityWarnings"
+        ],
+        "properties": {
+          "summary": {
+            "type": "string"
+          },
+          "keyReason": {
+            "type": "string"
+          },
+          "firstSchoolImprovement": {
+            "type": "string"
+          },
+          "secondSchoolImprovement": {
+            "type": "string"
+          },
+          "qualityWarnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "StoredAnalysis": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "analysisId",
+          "analysisDate",
+          "schools",
+          "prompt",
+          "scores",
+          "outcome",
+          "winnerSchool",
+          "review",
+          "disclaimer",
+          "createdAt"
+        ],
+        "properties": {
+          "analysisId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "analysisDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "schools": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "$ref": "#/components/schemas/SelectedSchool"
+            }
+          },
+          "prompt": {
+            "type": "string"
+          },
+          "scores": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "$ref": "#/components/schemas/SchoolScore"
+            }
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "first",
+              "second",
+              "tie"
+            ]
+          },
+          "winnerSchool": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SelectedSchool"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "review": {
+            "$ref": "#/components/schemas/AnalysisReview"
+          },
+          "disclaimer": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       }

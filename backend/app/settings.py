@@ -18,6 +18,7 @@ class Settings(BaseModel):
     retry_attempts: int = Field(default=1, ge=0, le=3)
     agent_mcp_url: str = "http://127.0.0.1:8001/mcp"
     github_copilot_model: str | None = None
+    database_path: str = "data/analyses.db"
 
     @field_validator("neis_api_key")
     @classmethod
@@ -58,6 +59,14 @@ class Settings(BaseModel):
         normalized = value.strip()
         return normalized or None
 
+    @field_validator("database_path")
+    @classmethod
+    def normalize_database_path(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("DATABASE_PATH must not be empty.")
+        return normalized
+
     @classmethod
     def from_env(cls, environ: Mapping[str, str] | None = None) -> "Settings":
         env = environ if environ is not None else os.environ
@@ -80,6 +89,7 @@ class Settings(BaseModel):
             "retry_attempts": env.get("RETRY_ATTEMPTS", "1"),
             "agent_mcp_url": env.get("AGENT_MCP_URL", "http://127.0.0.1:8001/mcp"),
             "github_copilot_model": env.get("GITHUB_COPILOT_MODEL"),
+            "database_path": env.get("DATABASE_PATH", "data/analyses.db"),
         }
 
         try:
