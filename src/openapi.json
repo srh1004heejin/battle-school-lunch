@@ -1,0 +1,410 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Battle School Lunch Internal API",
+    "version": "1.0.0",
+    "description": "React 프론트엔드와 FastAPI 백엔드 사이의 내부 OpenAPI 계약입니다."
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "operationId": "getHealth",
+        "summary": "헬스 체크",
+        "responses": {
+          "200": {
+            "description": "서버가 요청을 처리할 수 있습니다.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/schools": {
+      "get": {
+        "operationId": "searchSchools",
+        "summary": "학교 검색",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "description": "앞뒤 공백을 제거한 부분 학교명"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "학교 검색 결과",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchoolSearchResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error502"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          },
+          "504": {
+            "$ref": "#/components/responses/Error504"
+          }
+        }
+      }
+    },
+    "/api/schools/{educationOfficeCode}/{schoolCode}/meals": {
+      "get": {
+        "operationId": "getLunchMeals",
+        "summary": "중식 조회",
+        "parameters": [
+          {
+            "name": "educationOfficeCode",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z0-9]+$"
+            },
+            "description": "시도교육청코드"
+          },
+          {
+            "name": "schoolCode",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z0-9]+$"
+            },
+            "description": "학교 코드"
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "조회 시작일"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "조회 종료일"
+          },
+          {
+            "name": "mealType",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "lunch"
+              ]
+            },
+            "description": "현재는 lunch만 지원합니다."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "중식 조회 결과",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MealSearchResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error502"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          },
+          "504": {
+            "$ref": "#/components/responses/Error504"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "Error400": {
+        "description": "잘못된 입력입니다.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Error404": {
+        "description": "요청한 학교를 찾을 수 없습니다.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Error422": {
+        "description": "계약 제약을 만족하지 않는 요청입니다.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Error502": {
+        "description": "외부 NEIS 서비스 오류 또는 잘못된 응답입니다.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Error503": {
+        "description": "외부 NEIS 서비스에 연결할 수 없습니다.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Error504": {
+        "description": "외부 NEIS 서비스 응답 시간이 초과되었습니다.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "HealthResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ok"
+          }
+        }
+      },
+      "ErrorDetail": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "message",
+          "requestId"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorDetail"
+          }
+        }
+      },
+      "SchoolSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "educationOfficeCode",
+          "schoolCode",
+          "name",
+          "region",
+          "address"
+        ],
+        "properties": {
+          "educationOfficeCode": {
+            "type": "string"
+          },
+          "schoolCode": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "region": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          }
+        }
+      },
+      "SelectedSchool": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "educationOfficeCode",
+          "schoolCode",
+          "name"
+        ],
+        "properties": {
+          "educationOfficeCode": {
+            "type": "string"
+          },
+          "schoolCode": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "SchoolSearchResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schools"
+        ],
+        "properties": {
+          "schools": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SchoolSummary"
+            }
+          }
+        }
+      },
+      "Meal": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "date",
+          "mealType",
+          "menu"
+        ],
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "mealType": {
+            "type": "string",
+            "const": "lunch"
+          },
+          "menu": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          },
+          "calories": {
+            "type": "string"
+          },
+          "nutrition": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "origin": {
+            "type": "string"
+          }
+        }
+      },
+      "MealSearchResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "school",
+          "from",
+          "to",
+          "meals"
+        ],
+        "properties": {
+          "school": {
+            "$ref": "#/components/schemas/SelectedSchool"
+          },
+          "from": {
+            "type": "string",
+            "format": "date"
+          },
+          "to": {
+            "type": "string",
+            "format": "date"
+          },
+          "meals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Meal"
+            }
+          }
+        }
+      }
+    }
+  }
+}
