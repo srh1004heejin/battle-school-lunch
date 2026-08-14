@@ -23,6 +23,9 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # Python
+*.db
+*.db-shm
+*.db-wal
 __pycache__/
 *.py[cod]
 *$py.class

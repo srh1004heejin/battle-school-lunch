@@ -60,8 +60,11 @@ class GitHubCopilotEvaluationEngine:
 
     def _options(self) -> GitHubCopilotOptions:
         if self._settings.github_copilot_model:
-            return GitHubCopilotOptions(model=self._settings.github_copilot_model)
-        return GitHubCopilotOptions()
+            return GitHubCopilotOptions(
+                model=self._settings.github_copilot_model,
+                timeout=self._settings.github_copilot_timeout_seconds,
+            )
+        return GitHubCopilotOptions(timeout=self._settings.github_copilot_timeout_seconds)
 
     async def evaluate(self, request: AnalysisRequest) -> AnalysisResult:
         validate_analysis_date(request.date)
@@ -91,10 +94,10 @@ class GitHubCopilotEvaluationEngine:
             async def aggregate(results: list[Any]) -> str:
                 parsed: list[AreaEvaluation] = []
                 for result in results:
-                    messages = getattr(result.agent_response, "messages", [])
-                    if not messages:
+                    response_text = result.agent_response.text
+                    if not response_text.strip():
                         raise ValueError(f"{result.executor_id} 평가 결과가 비어 있습니다.")
-                    parsed.append(parse_json_model(messages[-1].text, AreaEvaluation))
+                    parsed.append(parse_json_model(response_text, AreaEvaluation))
                 captured.extend(parsed)
                 return "세 전문 평가가 완료되었습니다."
 

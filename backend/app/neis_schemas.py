@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class NeisResultStatus(BaseModel):
@@ -58,3 +58,12 @@ class MealServiceDietInfoRow(BaseModel):
     meal_from_date: str | None = Field(default=None, alias="MLSV_FROM_YMD")
     meal_to_date: str | None = Field(default=None, alias="MLSV_TO_YMD")
     load_datetime: str | None = Field(default=None, alias="LOAD_DTM")
+
+    @field_validator("meal_count", mode="before")
+    @classmethod
+    def normalize_numeric_meal_count(cls, value: object) -> object:
+        if isinstance(value, int) and not isinstance(value, bool):
+            return str(value)
+        if isinstance(value, float) and value.is_integer():
+            return str(int(value))
+        return value

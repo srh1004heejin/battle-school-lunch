@@ -38,7 +38,6 @@ class NeisClient:
             base_url=settings.neis_base_url,
             timeout=timeout,
             transport=transport,
-            headers={"Accept": "application/json"},
         )
 
     async def aclose(self) -> None:

@@ -13,6 +13,7 @@ vi.mock('@ag-ui/client', () => ({
             id: 'analysis-result',
             role: 'assistant',
             content: JSON.stringify({
+              analysisId: '00000000-0000-0000-0000-000000000001',
               scores: [
                 {
                   school: { educationOfficeCode: 'B10', schoolCode: '7010001', name: '후보학교1' },
