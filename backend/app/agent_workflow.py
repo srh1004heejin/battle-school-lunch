@@ -60,8 +60,11 @@ class GitHubCopilotEvaluationEngine:
 
     def _options(self) -> GitHubCopilotOptions:
         if self._settings.github_copilot_model:
-            return GitHubCopilotOptions(model=self._settings.github_copilot_model)
-        return GitHubCopilotOptions()
+            return GitHubCopilotOptions(
+                model=self._settings.github_copilot_model,
+                timeout=self._settings.github_copilot_timeout_seconds,
+            )
+        return GitHubCopilotOptions(timeout=self._settings.github_copilot_timeout_seconds)
 
     async def evaluate(self, request: AnalysisRequest) -> AnalysisResult:
         validate_analysis_date(request.date)

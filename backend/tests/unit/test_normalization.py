@@ -28,6 +28,24 @@ def test_normalize_meal_preserves_allergy_text_and_strips_markup() -> None:
     assert meal.nutrition == {"탄수화물": "98.3g", "단백질": "25.1g"}
 
 
+def test_normalize_meal_accepts_numeric_meal_count_from_neis() -> None:
+    meal = normalize_meal(
+        MealServiceDietInfoRow.model_validate(
+            {
+                "ATPT_OFCDC_SC_CODE": "R10",
+                "SD_SCHUL_CODE": "8801090",
+                "SCHUL_NM": "테스트학교",
+                "MMEAL_SC_CODE": "2",
+                "MLSV_YMD": "20260708",
+                "MLSV_FGR": 321.0,
+                "DDISH_NM": "현미밥",
+            }
+        )
+    )
+
+    assert meal.mealCount == "321"
+
+
 def test_dedupe_and_sort_meals_keeps_first_unique_records_in_date_order() -> None:
     meal_a = normalize_meal(
         MealServiceDietInfoRow.model_validate(

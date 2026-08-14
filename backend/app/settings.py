@@ -18,6 +18,7 @@ class Settings(BaseModel):
     retry_attempts: int = Field(default=1, ge=0, le=3)
     agent_mcp_url: str = "http://127.0.0.1:8001/mcp"
     github_copilot_model: str | None = None
+    github_copilot_timeout_seconds: float = Field(default=180.0, gt=0, le=600)
     database_path: str = "data/analyses.db"
 
     @field_validator("neis_api_key")
@@ -89,6 +90,7 @@ class Settings(BaseModel):
             "retry_attempts": env.get("RETRY_ATTEMPTS", "1"),
             "agent_mcp_url": env.get("AGENT_MCP_URL", "http://127.0.0.1:8001/mcp"),
             "github_copilot_model": env.get("GITHUB_COPILOT_MODEL"),
+            "github_copilot_timeout_seconds": env.get("GITHUB_COPILOT_TIMEOUT_SECONDS", "180"),
             "database_path": env.get("DATABASE_PATH", "data/analyses.db"),
         }
 

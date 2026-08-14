@@ -18,8 +18,9 @@ FastAPI 기반 내부 API입니다.
 - `python -m app.devui`: 분석 워크플로를 Agent Framework DevUI에서 확인
 
 GitHub Copilot CLI 인증이 필요합니다. 필요하면 `GITHUB_COPILOT_MODEL`로 모델을
-지정하고, `AGENT_MCP_URL`로 MCP 주소를 설정합니다. DevUI는 개발 확인용이며 운영
-UI로 사용하지 않습니다.
+지정하고, `GITHUB_COPILOT_TIMEOUT_SECONDS`로 모델 응답 제한 시간(기본 180초)을
+조정할 수 있습니다. `AGENT_MCP_URL`로 MCP 주소를 설정합니다. DevUI는 개발
+확인용이며 운영 UI로 사용하지 않습니다.
 
 Docker처럼 대화형 로그인을 사용할 수 없는 환경에서는 Copilot 사용 권한이 있는
 토큰을 `COPILOT_GITHUB_TOKEN` 환경 변수로 주입합니다. 토큰을 이미지나 소스에
