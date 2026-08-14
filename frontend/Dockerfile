@@ -10,7 +10,10 @@ RUN npm run build
 
 FROM nginx:1.27-alpine
 
-COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
+ENV BACKEND_HOST=backend:8000 \
+    NGINX_ENVSUBST_FILTER=BACKEND_HOST
+
+COPY frontend/nginx.conf /etc/nginx/templates/default.conf.template
 COPY --from=build /app/frontend/dist /usr/share/nginx/html
 
 EXPOSE 80

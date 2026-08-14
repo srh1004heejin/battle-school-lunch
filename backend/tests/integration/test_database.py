@@ -157,3 +157,19 @@ def test_tied_analysis_is_stored_without_a_winner(tmp_path) -> None:
     assert stored is not None
     assert stored.outcome == "tie"
     assert stored.winnerSchool is None
+
+
+def test_database_is_restored_from_backup(tmp_path) -> None:
+    database_path = tmp_path / "local" / "analyses.db"
+    backup_path = tmp_path / "persistent" / "analyses.db"
+    repository = SqliteAnalysisRepository(str(database_path), str(backup_path))
+    repository.initialize()
+    analysis_id = repository.save(build_request(), build_result())
+
+    database_path.unlink()
+    restored_repository = SqliteAnalysisRepository(str(database_path), str(backup_path))
+    restored_repository.initialize()
+
+    stored = restored_repository.get(analysis_id)
+    assert stored is not None
+    assert stored.review.summary == "첫학교가 우수합니다."

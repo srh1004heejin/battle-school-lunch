@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import asyncio
+from contextlib import contextmanager
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+import shutil
 import sqlite3
-from typing import Protocol
+from typing import Iterator, Protocol
 import uuid
 
 from .evaluation import AnalysisEngine, AnalysisRequest, AnalysisResult, StoredAnalysis
@@ -20,8 +22,9 @@ class AnalysisRepository(Protocol):
 
 
 class SqliteAnalysisRepository:
-    def __init__(self, database_path: str) -> None:
+    def __init__(self, database_path: str, backup_path: str | None = None) -> None:
         self._database_path = Path(database_path)
+        self._backup_path = Path(backup_path) if backup_path else None
         self._migration_directory = Path(__file__).resolve().parent / "migrations"
 
     def _connect(self) -> sqlite3.Connection:
@@ -30,9 +33,24 @@ class SqliteAnalysisRepository:
         connection.execute("PRAGMA foreign_keys = ON")
         return connection
 
+    @contextmanager
+    def _connection(self) -> Iterator[sqlite3.Connection]:
+        connection = self._connect()
+        try:
+            with connection:
+                yield connection
+        finally:
+            connection.close()
+
     def initialize(self) -> None:
         self._database_path.parent.mkdir(parents=True, exist_ok=True)
-        with self._connect() as connection:
+        if (
+            self._backup_path is not None
+            and self._backup_path.is_file()
+            and not self._database_path.exists()
+        ):
+            shutil.copy2(self._backup_path, self._database_path)
+        with self._connection() as connection:
             current_version = connection.execute("PRAGMA user_version").fetchone()[0]
             for migration_path in sorted(self._migration_directory.glob("[0-9][0-9][0-9]_*.sql")):
                 version = int(migration_path.name.split("_", maxsplit=1)[0])
@@ -45,12 +63,24 @@ class SqliteAnalysisRepository:
                         f"{migration_path.name} 적용 후 user_version이 {version}이 아닙니다."
                     )
                 current_version = applied_version
+        self._sync_backup()
+
+    def _sync_backup(self) -> None:
+        if self._backup_path is None:
+            return
+        self._backup_path.parent.mkdir(parents=True, exist_ok=True)
+        temporary_path = self._backup_path.with_name(f".{self._backup_path.name}.{uuid.uuid4()}.tmp")
+        try:
+            shutil.copy2(self._database_path, temporary_path)
+            temporary_path.replace(self._backup_path)
+        finally:
+            temporary_path.unlink(missing_ok=True)
 
     def save(self, request: AnalysisRequest, result: AnalysisResult) -> str:
         analysis_id = str(uuid.uuid4())
         created_at = datetime.now(timezone.utc).isoformat()
 
-        with self._connect() as connection:
+        with self._connection() as connection:
             school_ids: dict[tuple[str, str], int] = {}
             for school in request.schools:
                 connection.execute(
@@ -139,10 +169,11 @@ class SqliteAnalysisRepository:
                         ),
                     )
 
+        self._sync_backup()
         return analysis_id
 
     def get(self, analysis_id: str) -> StoredAnalysis | None:
-        with self._connect() as connection:
+        with self._connection() as connection:
             analysis = connection.execute(
                 "SELECT * FROM analysis_requests WHERE id = ?",
                 (analysis_id,),

@@ -20,6 +20,7 @@ class Settings(BaseModel):
     github_copilot_model: str | None = None
     github_copilot_timeout_seconds: float = Field(default=180.0, gt=0, le=600)
     database_path: str = "data/analyses.db"
+    database_backup_path: str | None = None
 
     @field_validator("neis_api_key")
     @classmethod
@@ -68,6 +69,14 @@ class Settings(BaseModel):
             raise ValueError("DATABASE_PATH must not be empty.")
         return normalized
 
+    @field_validator("database_backup_path")
+    @classmethod
+    def normalize_database_backup_path(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip()
+        return normalized or None
+
     @classmethod
     def from_env(cls, environ: Mapping[str, str] | None = None) -> "Settings":
         env = environ if environ is not None else os.environ
@@ -92,6 +101,7 @@ class Settings(BaseModel):
             "github_copilot_model": env.get("GITHUB_COPILOT_MODEL"),
             "github_copilot_timeout_seconds": env.get("GITHUB_COPILOT_TIMEOUT_SECONDS", "180"),
             "database_path": env.get("DATABASE_PATH", "data/analyses.db"),
+            "database_backup_path": env.get("DATABASE_BACKUP_PATH"),
         }
 
         try:
